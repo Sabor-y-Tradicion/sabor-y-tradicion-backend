@@ -50,6 +50,21 @@ web_modules/
 # Optional npm cache directory
 .npm
 
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+
+# Uploads directory (local development)
+uploads/
+
+# IDE
+.vscode/
+.idea/
+
 # Optional eslint cache
 .eslintcache
 
@@ -137,3 +152,6 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+#Idea
+.idea/
