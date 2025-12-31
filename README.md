@@ -88,17 +88,6 @@ Content-Type: application/json
 }
 ```
 
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "admin@sabor-tradicion.com",
-  "password": "admin123"
-}
-```
-
 #### Verificar Token
 ```http
 GET /api/auth/verify
@@ -250,23 +239,142 @@ Después de ejecutar el seed, puedes usar estas credenciales:
 - `npm run prisma:studio` - Abre Prisma Studio (GUI de base de datos)
 - `npm run prisma:seed` - Puebla la base de datos con datos de prueba
 
-## 🚀 Deploy
+## 🚀 Deploy en Railway
 
-### Railway.app (Recomendado)
+### Paso 1: Preparar el Repositorio
 
-1. Crear cuenta en [Railway.app](https://railway.app)
-2. Conectar repositorio de GitHub
-3. Agregar PostgreSQL desde el marketplace
-4. Configurar variables de entorno
-5. Deploy automático
+1. **Asegúrate de tener un repositorio Git**
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+```
 
-### Render.com
+2. **Subir a GitHub**
+```bash
+gh repo create sabor-y-tradicion-backend --public
+git remote add origin https://github.com/tu-usuario/sabor-y-tradicion-backend.git
+git push -u origin main
+```
+
+### Paso 2: Configurar Railway
+
+1. **Crear cuenta en [Railway.app](https://railway.app)**
+
+2. **Crear nuevo proyecto**
+   - Click en "New Project"
+   - Selecciona "Deploy from GitHub repo"
+   - Autoriza Railway a acceder a tu repositorio
+   - Selecciona el repositorio `sabor-y-tradicion-backend`
+
+3. **Agregar PostgreSQL**
+   - En tu proyecto, click en "New"
+   - Selecciona "Database" → "Add PostgreSQL"
+   - Railway creará automáticamente la base de datos
+
+### Paso 3: Configurar Variables de Entorno
+
+En Railway, ve a tu servicio → Variables → Add Variables:
+
+```env
+NODE_ENV=production
+PORT=5000
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+JWT_SECRET=tu_secret_super_seguro_cambiar_en_produccion
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=https://tu-frontend.vercel.app
+RATE_LIMIT_WINDOW=15
+RATE_LIMIT_MAX=100
+```
+
+**⚠️ IMPORTANTE:** 
+- Cambia `JWT_SECRET` por un valor aleatorio seguro
+- Actualiza `FRONTEND_URL` con la URL de tu frontend en producción
+- `DATABASE_URL` se referencia automáticamente desde PostgreSQL
+
+### Paso 4: Configurar Build & Deploy
+
+Railway detecta automáticamente Node.js. Verificar en Settings:
+
+- **Build Command**: `npm run build`
+- **Start Command**: `npm start`
+- **Install Command**: `npm install`
+
+### Paso 5: Ejecutar Migraciones
+
+Después del primer deploy, ejecuta las migraciones:
+
+1. Ve a tu proyecto en Railway
+2. Click en tu servicio
+3. Ve a la pestaña "Deployments"
+4. Click en el último deployment
+5. Ve a "Command" y ejecuta:
+```bash
+npx prisma migrate deploy
+```
+
+### Paso 6: Crear Usuario Administrador
+
+En Railway, ejecuta el script de creación de admin:
+
+```bash
+npm run create:admin
+```
+
+O conéctate a la BD y crea manualmente:
+```sql
+INSERT INTO users (id, email, password, name, role, "createdAt", "updatedAt")
+VALUES (
+  'admin_id',
+  'admin@sabor-tradicion.com',
+  '$2a$10$hashedPassword',
+  'Administrador',
+  'ADMIN',
+  NOW(),
+  NOW()
+);
+```
+
+### Paso 7: Verificar Deploy
+
+Tu API estará disponible en:
+```
+https://sabor-y-tradicion-backend-production.up.railway.app
+```
+
+Verifica que funciona:
+```bash
+curl https://tu-url.railway.app/health
+```
+
+### Troubleshooting
+
+#### Error de conexión a PostgreSQL
+- Verifica que la variable `DATABASE_URL` esté correctamente configurada
+- Asegúrate de que Railway haya vinculado el servicio de PostgreSQL
+
+#### Error en migraciones
+```bash
+# Reiniciar la base de datos (⚠️ CUIDADO: Elimina todos los datos)
+npx prisma migrate reset --force
+npx prisma migrate deploy
+```
+
+#### Ver logs
+```bash
+# En Railway, ve a tu servicio → Deployments → View Logs
+```
+
+### Alternativa: Render.com
+
+Si prefieres Render:
 
 1. Crear cuenta en [Render.com](https://render.com)
-2. Crear nuevo Web Service
-3. Agregar PostgreSQL
+2. Crear nuevo Web Service desde GitHub
+3. Agregar PostgreSQL desde Dashboard
 4. Configurar variables de entorno
-5. Deploy
+5. Build Command: `npm run build`
+6. Start Command: `npm start`
 
 ## 📝 Licencia
 

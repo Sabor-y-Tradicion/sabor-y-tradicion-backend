@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model for authentication
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -26,12 +19,6 @@ model User {
   @@map("users")
 }
 
-enum Role {
-  ADMIN
-  EDITOR
-}
-
-// Category model
 model Category {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -40,36 +27,33 @@ model Category {
   icon        String?
   order       Int      @default(0)
   isActive    Boolean  @default(true)
-  dishes      Dish[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  dishes      Dish[]
 
   @@index([slug])
   @@index([order])
   @@map("categories")
 }
 
-// Dish model
 model Dish {
-  id           String   @id @default(cuid())
-  name         String
-  slug         String   @unique
-  description  String
-  price        Decimal  @db.Decimal(10, 2)
-  imageUrl     String?
-  categoryId   String
-  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  tags         Tag[]
-  isActive     Boolean  @default(true)
-  isVegetarian Boolean  @default(false)
-  isVegan      Boolean  @default(false)
-  isGlutenFree Boolean  @default(false)
-  isSpicy      Boolean  @default(false)
-  isFeatured   Boolean  @default(false)
-  allergens    String[]
-  order        Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String
+  price           Decimal  @db.Decimal(10, 2)
+  categoryId      String
+  image           String?
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false)
+  allergens       String[] @default([])
+  tags            String[] @default([])
+  preparationTime Int?
+  servings        Int?
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([slug])
   @@index([categoryId])
@@ -77,37 +61,28 @@ model Dish {
   @@map("dishes")
 }
 
-// Tag model
-model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  dishes    Dish[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("tags")
-}
-
-// Settings model for global configuration
 model Settings {
   id        String   @id @default(cuid())
   key       String   @unique
-  value     String   @db.Text
-  type      String   @default("string") // string, json, boolean, number
+  value     String
+  type      String   @default("string")
   updatedAt DateTime @updatedAt
 
   @@map("settings")
 }
 
-// PageContent model for editable page content
 model PageContent {
   id        String   @id @default(cuid())
-  page      String // 'about', 'home', 'contact'
-  section   String // 'hero', 'history', 'philosophy'
-  content   String   @db.Text
+  page      String
+  section   String
+  content   String
   updatedAt DateTime @updatedAt
 
   @@unique([page, section])
   @@map("page_content")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
 }

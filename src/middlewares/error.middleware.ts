@@ -14,10 +14,27 @@ export const errorHandler = (
   // Zod validation errors
   if (err instanceof ZodError) {
     const errors = err.issues.map((e: any) => ({
-      path: e.path.join('.'),
+      field: e.path.join('.'),
       message: e.message,
     }));
-    return errorResponse(res, `Validation error: ${JSON.stringify(errors)}`, 400);
+
+    // Si es un error de tamaño de imagen, devolver un mensaje más específico
+    const imageError = errors.find(e => e.field === 'image' && e.message.includes('demasiado grande'));
+    if (imageError) {
+      return res.status(413).json({
+        success: false,
+        error: imageError.message,
+        code: 'IMAGE_TOO_LARGE',
+        maxSize: '10MB',
+        suggestion: 'Intenta comprimir la imagen usando herramientas online como tinypng.com o compressor.io'
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: 'Error de validación',
+      errors: errors
+    });
   }
 
   // Prisma errors

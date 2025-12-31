@@ -33,21 +33,44 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
-// Rate limiting configuration
+// Rate limiting configuration - Más permisivo en desarrollo
 const limiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW || '15')) * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX || '100'), // Limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX || '1000'), // 1000 requests en desarrollo (antes 100)
   message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Skip rate limiting for certain endpoints
+  skip: (req) => {
+    // No aplicar rate limit en desarrollo a /health y /docs
+    if (process.env.NODE_ENV === 'development') {
+      return req.path === '/health' || req.path.startsWith('/docs');
+    }
+    return false;
+  },
 });
 
 // Middlewares
 app.use(helmet()); // Security headers
 app.use(cors(corsOptions)); // CORS
 app.use(compression()); // Compress responses
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(express.json({ limit: '10mb' })); // Parse JSON bodies - Max 10MB
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded bodies - Max 10MB
 app.use(morgan('dev')); // HTTP request logger
 app.use('/api/', limiter); // Apply rate limiting to all API routes
+
+// Middleware para manejar errores de payload demasiado grande
+app.use((error: any, req: any, res: any, next: any) => {
+  if (error.type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      error: 'La imagen es demasiado grande. El tamaño máximo permitido es 10MB. Por favor, comprime la imagen antes de subirla.',
+      code: 'PAYLOAD_TOO_LARGE',
+      maxSize: '10MB'
+    });
+  }
+  next(error);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

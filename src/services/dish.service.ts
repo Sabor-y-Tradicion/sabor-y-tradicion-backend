@@ -7,9 +7,6 @@ export class DishService {
     categoryId?: string;
     search?: string;
     isActive?: boolean;
-    isVegetarian?: boolean;
-    isVegan?: boolean;
-    isGlutenFree?: boolean;
     isFeatured?: boolean;
     page?: number;
     limit?: number;
@@ -35,18 +32,6 @@ export class DishService {
       where.isActive = filters.isActive;
     }
 
-    if (filters?.isVegetarian !== undefined) {
-      where.isVegetarian = filters.isVegetarian;
-    }
-
-    if (filters?.isVegan !== undefined) {
-      where.isVegan = filters.isVegan;
-    }
-
-    if (filters?.isGlutenFree !== undefined) {
-      where.isGlutenFree = filters.isGlutenFree;
-    }
-
     if (filters?.isFeatured !== undefined) {
       where.isFeatured = filters.isFeatured;
     }
@@ -56,7 +41,6 @@ export class DishService {
         where,
         include: {
           category: true,
-          tags: true,
         },
         orderBy: { order: 'asc' },
         skip,
@@ -81,7 +65,6 @@ export class DishService {
       where: { id },
       include: {
         category: true,
-        tags: true,
       },
     });
 
@@ -97,7 +80,6 @@ export class DishService {
       where: { slug },
       include: {
         category: true,
-        tags: true,
       },
     });
 
@@ -129,25 +111,24 @@ export class DishService {
       throw new Error('Category not found');
     }
 
-    // Handle tags
-    const tagIds = data.tags || [];
-    const tags = tagIds.length > 0
-      ? {
-          connect: tagIds.map((id) => ({ id })),
-        }
-      : undefined;
-
-    const { tags: _, ...dishData } = data;
-
     return await prisma.dish.create({
       data: {
-        ...dishData,
+        name: data.name,
+        description: data.description,
+        price: data.price,
+        categoryId: data.categoryId,
+        image: data.image,
         slug,
-        tags,
+        isActive: data.isActive ?? true,
+        isFeatured: data.isFeatured ?? false,
+        allergens: data.allergens ?? [],
+        tags: data.tags ?? [],
+        preparationTime: data.preparationTime,
+        servings: data.servings,
+        order: data.order ?? 0,
       },
       include: {
         category: true,
-        tags: true,
       },
     });
   }
@@ -159,7 +140,18 @@ export class DishService {
     });
 
     if (!dish) {
-      throw new Error('Dish not found');
+      throw new Error(`Dish with id ${id} not found`);
+    }
+
+    // Validate category exists if provided
+    if (data.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: data.categoryId },
+      });
+
+      if (!category) {
+        throw new Error(`Category with id ${data.categoryId} not found`);
+      }
     }
 
     // Generate new slug if name changed
@@ -168,19 +160,11 @@ export class DishService {
       updateData.slug = generateSlug(data.name);
     }
 
-    // Handle tags
-    if (data.tags) {
-      updateData.tags = {
-        set: data.tags.map((id: string) => ({ id })),
-      };
-    }
-
     return await prisma.dish.update({
       where: { id },
       data: updateData,
       include: {
         category: true,
-        tags: true,
       },
     });
   }
