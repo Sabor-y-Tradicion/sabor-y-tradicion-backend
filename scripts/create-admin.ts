@@ -7,9 +7,27 @@ async function createAdminUser() {
   console.log('👤 Creando usuario administrador...');
 
   try {
-    // Verificar si ya existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email: 'admin@sabor-tradicion.com' }
+    // Buscar o crear tenant por defecto
+    let tenant = await prisma.tenant.findFirst();
+    
+    if (!tenant) {
+      console.log('📝 Creando tenant por defecto...');
+      tenant = await prisma.tenant.create({
+        data: {
+          name: 'Sabor y Tradición',
+          slug: 'sabor-y-tradicion',
+          isActive: true,
+        },
+      });
+      console.log(`✅ Tenant creado: ${tenant.name}`);
+    }
+
+    // Verificar si ya existe el usuario
+    const existingUser = await prisma.user.findFirst({
+      where: { 
+        email: 'admin@sabor-tradicion.com',
+        tenantId: tenant.id
+      }
     });
 
     if (existingUser) {
@@ -27,6 +45,7 @@ async function createAdminUser() {
         password: hashedPassword,
         name: 'Administrador',
         role: 'ADMIN',
+        tenantId: tenant.id,
       },
     });
 
@@ -34,6 +53,7 @@ async function createAdminUser() {
     console.log('📧 Email: admin@sabor-tradicion.com');
     console.log('🔑 Password: admin123');
     console.log('👤 ID:', admin.id);
+    console.log('🏢 Tenant:', tenant.name);
 
   } catch (error) {
     console.error('❌ Error al crear usuario:', error);

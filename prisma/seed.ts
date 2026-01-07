@@ -8,13 +8,24 @@ async function main() {
 
   // Clean existing data
   await prisma.dish.deleteMany();
-  await prisma.tag.deleteMany();
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
   await prisma.settings.deleteMany();
   await prisma.pageContent.deleteMany();
+  await prisma.tenant.deleteMany();
 
   console.log('✅ Cleaned existing data');
+
+  // Create tenant
+  const tenant = await prisma.tenant.create({
+    data: {
+      name: 'Sabor y Tradición',
+      slug: 'sabor-y-tradicion',
+      isActive: true,
+    },
+  });
+
+  console.log(`✅ Created tenant: ${tenant.name}`);
 
   // Create admin user
   const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -24,6 +35,7 @@ async function main() {
       password: hashedPassword,
       name: 'Administrador',
       role: 'ADMIN',
+      tenantId: tenant.id,
     },
   });
 
@@ -39,6 +51,7 @@ async function main() {
         icon: '☕',
         order: 0,
         isActive: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.category.create({
@@ -49,6 +62,7 @@ async function main() {
         icon: '🥤',
         order: 1,
         isActive: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.category.create({
@@ -59,6 +73,7 @@ async function main() {
         icon: '🍳',
         order: 2,
         isActive: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.category.create({
@@ -69,6 +84,7 @@ async function main() {
         icon: '🍽️',
         order: 3,
         isActive: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.category.create({
@@ -79,22 +95,12 @@ async function main() {
         icon: '🍰',
         order: 4,
         isActive: true,
+        tenantId: tenant.id,
       },
     }),
   ]);
 
   console.log('✅ Created categories');
-
-  // Create tags
-  const tags = await Promise.all([
-    prisma.tag.create({ data: { name: 'Vegetariano', slug: 'vegetariano' } }),
-    prisma.tag.create({ data: { name: 'Vegano', slug: 'vegano' } }),
-    prisma.tag.create({ data: { name: 'Sin Gluten', slug: 'sin-gluten' } }),
-    prisma.tag.create({ data: { name: 'Picante', slug: 'picante' } }),
-    prisma.tag.create({ data: { name: 'Recomendado', slug: 'recomendado' } }),
-  ]);
-
-  console.log('✅ Created tags');
 
   // Create dishes
   await prisma.dish.createMany({
@@ -108,6 +114,8 @@ async function main() {
         categoryId: categories[0].id,
         isActive: true,
         order: 0,
+        tenantId: tenant.id,
+        tags: [],
       },
       {
         name: 'Café con Leche',
@@ -117,6 +125,8 @@ async function main() {
         categoryId: categories[0].id,
         isActive: true,
         order: 1,
+        tenantId: tenant.id,
+        tags: [],
       },
       {
         name: 'Té de Hierbas',
@@ -125,9 +135,9 @@ async function main() {
         price: 4.5,
         categoryId: categories[0].id,
         isActive: true,
-        isVegan: true,
-        isVegetarian: true,
         order: 2,
+        tenantId: tenant.id,
+        tags: ['vegano', 'vegetariano'],
       },
       // Bebidas Frías
       {
@@ -137,9 +147,9 @@ async function main() {
         price: 7.0,
         categoryId: categories[1].id,
         isActive: true,
-        isVegan: true,
-        isVegetarian: true,
         order: 0,
+        tenantId: tenant.id,
+        tags: ['vegano', 'vegetariano'],
       },
       {
         name: 'Chicha Morada',
@@ -148,10 +158,10 @@ async function main() {
         price: 6.0,
         categoryId: categories[1].id,
         isActive: true,
-        isVegan: true,
-        isVegetarian: true,
         isFeatured: true,
         order: 1,
+        tenantId: tenant.id,
+        tags: ['vegano', 'vegetariano'],
       },
       // Desayunos
       {
@@ -163,6 +173,8 @@ async function main() {
         isActive: true,
         isFeatured: true,
         order: 0,
+        tenantId: tenant.id,
+        tags: [],
       },
       {
         name: 'Tamal Tradicional',
@@ -172,6 +184,8 @@ async function main() {
         categoryId: categories[2].id,
         isActive: true,
         order: 1,
+        tenantId: tenant.id,
+        tags: [],
       },
       // Platos de Fondo
       {
@@ -183,6 +197,8 @@ async function main() {
         isActive: true,
         isFeatured: true,
         order: 0,
+        tenantId: tenant.id,
+        tags: [],
       },
       {
         name: 'Seco de Res',
@@ -192,6 +208,8 @@ async function main() {
         categoryId: categories[3].id,
         isActive: true,
         order: 1,
+        tenantId: tenant.id,
+        tags: [],
       },
       {
         name: 'Arroz Chaufa Vegetariano',
@@ -200,8 +218,9 @@ async function main() {
         price: 16.0,
         categoryId: categories[3].id,
         isActive: true,
-        isVegetarian: true,
         order: 2,
+        tenantId: tenant.id,
+        tags: ['vegetariano'],
       },
       // Postres
       {
@@ -211,8 +230,9 @@ async function main() {
         price: 10.0,
         categoryId: categories[4].id,
         isActive: true,
-        isVegetarian: true,
         order: 0,
+        tenantId: tenant.id,
+        tags: ['vegetariano'],
       },
       {
         name: 'Mazamorra Morada',
@@ -221,9 +241,9 @@ async function main() {
         price: 8.0,
         categoryId: categories[4].id,
         isActive: true,
-        isVegan: true,
-        isVegetarian: true,
         order: 1,
+        tenantId: tenant.id,
+        tags: ['vegano', 'vegetariano'],
       },
     ],
   });
@@ -237,31 +257,37 @@ async function main() {
         key: 'restaurant_name',
         value: 'Sabor y Tradición',
         type: 'string',
+        tenantId: tenant.id,
       },
       {
         key: 'restaurant_phone',
         value: '+51 987 654 321',
         type: 'string',
+        tenantId: tenant.id,
       },
       {
         key: 'restaurant_email',
         value: 'info@sabor-tradicion.com',
         type: 'string',
+        tenantId: tenant.id,
       },
       {
         key: 'restaurant_address',
         value: 'Av. Principal 123, Chachapoyas, Amazonas',
         type: 'string',
+        tenantId: tenant.id,
       },
       {
         key: 'social_instagram',
         value: 'https://instagram.com/sabor-tradicion',
         type: 'string',
+        tenantId: tenant.id,
       },
       {
         key: 'social_facebook',
         value: 'https://facebook.com/sabor-tradicion',
         type: 'string',
+        tenantId: tenant.id,
       },
     ],
   });
@@ -275,12 +301,14 @@ async function main() {
         page: 'about',
         section: 'hero',
         content: 'Bienvenido a Sabor y Tradición, donde cada plato cuenta una historia.',
+        tenantId: tenant.id,
       },
       {
         page: 'about',
         section: 'history',
         content:
           'Desde 2020, hemos estado sirviendo la mejor comida tradicional chachapoyana, preparada con recetas familiares transmitidas de generación en generación.',
+        tenantId: tenant.id,
       },
     ],
   });
