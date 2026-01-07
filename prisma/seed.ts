@@ -6,12 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting seed...');
 
-  // Clean existing data
-  await prisma.dish.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.settings.deleteMany();
-  await prisma.pageContent.deleteMany();
+  // Clean existing data - delete tenants first (cascades to all related data)
   await prisma.tenant.deleteMany();
 
   console.log('✅ Cleaned existing data');

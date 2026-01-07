@@ -81,11 +81,3 @@ ALTER TABLE "settings" ADD CONSTRAINT "settings_tenantId_fkey" FOREIGN KEY ("ten
 
 -- AddForeignKey
 ALTER TABLE "page_content" ADD CONSTRAINT "page_content_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- NOTE: After running the migrate-to-multitenant.ts script to populate tenantId values,
--- you should make tenantId NOT NULL with ALTER TABLE statements:
--- ALTER TABLE "users" ALTER COLUMN "tenantId" SET NOT NULL;
--- ALTER TABLE "categories" ALTER COLUMN "tenantId" SET NOT NULL;
--- ALTER TABLE "dishes" ALTER COLUMN "tenantId" SET NOT NULL;
--- ALTER TABLE "settings" ALTER COLUMN "tenantId" SET NOT NULL;
--- ALTER TABLE "page_content" ALTER COLUMN "tenantId" SET NOT NULL;

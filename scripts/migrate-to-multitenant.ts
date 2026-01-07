@@ -10,14 +10,29 @@ async function migrateToMultitenant() {
     const existingTenant = await prisma.tenant.findFirst();
 
     if (existingTenant) {
-      console.log('⚠️  Ya existe un tenant. Saltando migración.');
-      console.log(`   Tenant existente: ${existingTenant.name}`);
-      return;
+      // Verificar si hay datos sin migrar
+      const unmigrated = {
+        users: await prisma.user.count({ where: { tenantId: null } }),
+        categories: await prisma.category.count({ where: { tenantId: null } }),
+        dishes: await prisma.dish.count({ where: { tenantId: null } }),
+        settings: await prisma.settings.count({ where: { tenantId: null } }),
+        pageContents: await prisma.pageContent.count({ where: { tenantId: null } }),
+      };
+
+      const totalUnmigrated = Object.values(unmigrated).reduce((a, b) => a + b, 0);
+
+      if (totalUnmigrated === 0) {
+        console.log('⚠️  Ya existe un tenant. Saltando migración.');
+        console.log(`   Tenant existente: ${existingTenant.name}`);
+        return;
+      } else {
+        console.log(`⚠️  Tenant existe pero hay ${totalUnmigrated} registro(s) sin migrar.`);
+        console.log('📝 Continuando con la migración de datos pendientes...');
+      }
     }
 
-    // Crear el tenant por defecto
-    console.log('📝 Creando tenant por defecto...');
-    const tenant = await prisma.tenant.create({
+    // Crear el tenant por defecto si no existe
+    const tenant = existingTenant || await prisma.tenant.create({
       data: {
         name: 'Sabor y Tradición',
         slug: 'sabor-y-tradicion',
@@ -25,7 +40,9 @@ async function migrateToMultitenant() {
       },
     });
 
-    console.log(`✅ Tenant creado: ${tenant.name}`);
+    if (!existingTenant) {
+      console.log(`✅ Tenant creado: ${tenant.name}`);
+    }
 
     // Migrar usuarios existentes al nuevo tenant
     const usersCount = await prisma.user.count({
