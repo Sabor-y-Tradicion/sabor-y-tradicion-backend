@@ -13,6 +13,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "migrate:multitenant": "ts-node scripts/migrate-to-multitenant.ts",
     "create:admin": "ts-node scripts/create-admin.ts",
     "reset:admin": "ts-node scripts/reset-admin.ts",
     "verify:deploy": "node scripts/verify-deploy.js",

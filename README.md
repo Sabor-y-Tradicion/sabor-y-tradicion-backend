@@ -238,6 +238,63 @@ Después de ejecutar el seed, puedes usar estas credenciales:
 - `npm run prisma:migrate` - Ejecuta migraciones de base de datos
 - `npm run prisma:studio` - Abre Prisma Studio (GUI de base de datos)
 - `npm run prisma:seed` - Puebla la base de datos con datos de prueba
+- `npm run migrate:multitenant` - Migra la base de datos a sistema multitenant
+- `npm run create:admin` - Crea un usuario administrador
+- `npm run reset:admin` - Resetea el usuario administrador
+
+## 🏢 Sistema Multi-tenant
+
+El backend soporta arquitectura multi-tenant, permitiendo que múltiples restaurantes usen la misma instancia de la aplicación con datos aislados.
+
+### Migración a Multi-tenant
+
+Si tienes datos existentes y quieres migrar a multi-tenant:
+
+```bash
+# 1. Ejecutar las migraciones de base de datos
+npm run prisma:migrate
+
+# 2. Ejecutar el script de migración de datos
+npm run migrate:multitenant
+```
+
+El script de migración:
+- ✅ Es **idempotente** - puede ejecutarse múltiples veces sin duplicar datos
+- ✅ Verifica si ya existe un tenant antes de crear uno nuevo
+- ✅ Crea un tenant "Sabor y Tradición" por defecto
+- ✅ Asocia todos los datos existentes al nuevo tenant
+
+**Salida esperada:**
+```bash
+🚀 Migrando a sistema multitenant...
+📝 Creando tenant por defecto...
+✅ Tenant creado: Sabor y Tradición
+🔄 Migrando X usuario(s)...
+✅ Usuarios migrados
+...
+🎉 ¡Migración completada exitosamente!
+```
+
+Si el tenant ya existe:
+```bash
+🚀 Migrando a sistema multitenant...
+⚠️  Ya existe un tenant. Saltando migración.
+   Tenant existente: Sabor y Tradición
+```
+
+### Estructura Multi-tenant
+
+Todos los modelos principales están asociados a un tenant:
+- 👤 **Users** - Usuarios por tenant
+- 📂 **Categories** - Categorías por tenant
+- 🍽️ **Dishes** - Platos por tenant
+- ⚙️ **Settings** - Configuraciones por tenant
+- 📄 **PageContent** - Contenido de páginas por tenant
+
+Esto permite:
+- Aislamiento completo de datos entre restaurantes
+- Gestión centralizada de múltiples instancias
+- Escalabilidad horizontal
 
 ## 🚀 Deploy en Railway
 

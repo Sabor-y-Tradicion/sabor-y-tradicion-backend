@@ -7,39 +7,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  users       User[]
+  categories  Category[]
+  dishes      Dish[]
+  settings    Settings[]
+  pageContent PageContent[]
+
+  @@map("tenants")
+}
+
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String
   password  String
   name      String
   role      Role     @default(ADMIN)
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([email, tenantId])
+  @@index([tenantId])
   @@map("users")
 }
 
 model Category {
   id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
+  name        String
+  slug        String
   description String?
   icon        String?
   order       Int      @default(0)
   isActive    Boolean  @default(true)
+  tenantId    String?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   dishes      Dish[]
 
+  @@unique([slug, tenantId])
+  @@unique([name, tenantId])
   @@index([slug])
   @@index([order])
+  @@index([tenantId])
   @@map("categories")
 }
 
 model Dish {
   id              String   @id @default(cuid())
   name            String
-  slug            String   @unique
+  slug            String
   description     String
   price           Decimal  @db.Decimal(10, 2)
   categoryId      String
@@ -51,23 +76,31 @@ model Dish {
   preparationTime Int?
   servings        Int?
   order           Int      @default(0)
+  tenantId        String?
+  tenant          Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
+  @@unique([slug, tenantId])
   @@index([slug])
   @@index([categoryId])
   @@index([isActive])
+  @@index([tenantId])
   @@map("dishes")
 }
 
 model Settings {
   id        String   @id @default(cuid())
-  key       String   @unique
+  key       String
   value     String
   type      String   @default("string")
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   updatedAt DateTime @updatedAt
 
+  @@unique([key, tenantId])
+  @@index([tenantId])
   @@map("settings")
 }
 
@@ -76,9 +109,12 @@ model PageContent {
   page      String
   section   String
   content   String
+  tenantId  String?
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   updatedAt DateTime @updatedAt
 
-  @@unique([page, section])
+  @@unique([page, section, tenantId])
+  @@index([tenantId])
   @@map("page_content")
 }
 
