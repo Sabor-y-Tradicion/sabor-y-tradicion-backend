@@ -3,38 +3,45 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function resetAdminUser() {
-  console.log('🔄 Reseteando usuario administrador...');
+async function resetSuperAdmin() {
+  console.log('🔄 Reseteando usuario SUPERADMIN...');
 
   try {
-    // PASO 1: Eliminar TODOS los usuarios
-    console.log('🗑️ Eliminando todos los usuarios...');
-    const deleted = await prisma.user.deleteMany({});
-    console.log(`✅ Eliminados ${deleted.count} usuario(s)`);
+    // PASO 1: Eliminar SOLO el SUPERADMIN existente (si existe)
+    console.log('🗑️ Eliminando SUPERADMIN anterior (si existe)...');
+    const deleted = await prisma.user.deleteMany({
+      where: {
+        email: 'superadmin@tuapp.com'
+      }
+    });
+    console.log(`✅ Eliminados ${deleted.count} usuario(s) SUPERADMIN`);
 
-    // PASO 2: Crear usuario admin
-    console.log('👤 Creando nuevo usuario administrador...');
+    // PASO 2: Crear nuevo usuario SUPERADMIN
+    console.log('👤 Creando nuevo usuario SUPERADMIN...');
 
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('superadmin123', 10);
 
-    const admin = await prisma.user.create({
+    const superadmin = await prisma.user.create({
       data: {
-        email: 'admin@sabor-tradicion.com',
+        email: 'superadmin@tuapp.com',
         password: hashedPassword,
-        name: 'Administrador',
-        role: 'ADMIN',
+        name: 'Super Administrador',
+        role: 'SUPERADMIN',
+        tenantId: null, // SUPERADMIN no tiene tenant
       },
     });
 
-    console.log('\n✨ ¡Usuario administrador creado exitosamente!');
+    console.log('\n✨ ¡Usuario SUPERADMIN creado exitosamente!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📧 Email:    admin@sabor-tradicion.com');
-    console.log('🔑 Password: admin123');
-    console.log('👤 Nombre:   Administrador');
-    console.log('🎯 Rol:      ADMIN');
-    console.log('🆔 ID:      ', admin.id);
+    console.log('📧 Email:    superadmin@tuapp.com');
+    console.log('🔑 Password: superadmin123');
+    console.log('👤 Nombre:   Super Administrador');
+    console.log('🎯 Rol:      SUPERADMIN');
+    console.log('🏢 Tenant:   Sin tenant (correcto)');
+    console.log('🆔 ID:      ', superadmin.id);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('\n✅ ¡Ahora puedes hacer login en el frontend!');
+    console.log('🌐 URL de login: /superadmin/login');
 
   } catch (error) {
     console.error('\n❌ Error:', error);
@@ -43,5 +50,5 @@ async function resetAdminUser() {
   }
 }
 
-resetAdminUser();
+resetSuperAdmin();
 

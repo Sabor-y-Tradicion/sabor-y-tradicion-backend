@@ -3,8 +3,11 @@ import { CreateCategoryInput, UpdateCategoryInput } from '../validators/category
 import { generateSlug } from '../utils/helpers';
 
 export class CategoryService {
-  async getAll() {
+  async getAll(tenantId?: string) {
+    const where = tenantId ? { tenantId } : {};
+
     return await prisma.category.findMany({
+      where,
       orderBy: { order: 'asc' },
       include: {
         _count: {
@@ -14,9 +17,14 @@ export class CategoryService {
     });
   }
 
-  async getById(id: string) {
+  async getById(id: string, tenantId?: string) {
+    const where: any = { id };
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
     const category = await prisma.category.findUnique({
-      where: { id },
+      where,
       include: {
         dishes: {
           where: { isActive: true },
@@ -32,9 +40,14 @@ export class CategoryService {
     return category;
   }
 
-  async getBySlug(slug: string) {
+  async getBySlug(slug: string, tenantId: string) {
     const category = await prisma.category.findUnique({
-      where: { slug },
+      where: {
+        slug_tenantId: {
+          slug,
+          tenantId,
+        },
+      },
       include: {
         dishes: {
           where: { isActive: true },
@@ -50,12 +63,17 @@ export class CategoryService {
     return category;
   }
 
-  async create(data: CreateCategoryInput) {
+  async create(data: CreateCategoryInput, tenantId: string) {
     const slug = generateSlug(data.name);
 
-    // Check if slug already exists
+    // Check if slug already exists for this tenant
     const existingCategory = await prisma.category.findUnique({
-      where: { slug },
+      where: {
+        slug_tenantId: {
+          slug,
+          tenantId,
+        },
+      },
     });
 
     if (existingCategory) {
@@ -66,14 +84,20 @@ export class CategoryService {
       data: {
         ...data,
         slug,
+        tenantId,
       },
     });
   }
 
-  async update(id: string, data: UpdateCategoryInput) {
+  async update(id: string, data: UpdateCategoryInput, tenantId?: string) {
     // Check if category exists
-    const category = await prisma.category.findUnique({
-      where: { id },
+    const where: any = { id };
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
+    const category = await prisma.category.findFirst({
+      where,
     });
 
     if (!category) {
@@ -92,10 +116,15 @@ export class CategoryService {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string, tenantId?: string) {
     // Check if category exists
-    const category = await prisma.category.findUnique({
-      where: { id },
+    const where: any = { id };
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+
+    const category = await prisma.category.findFirst({
+      where,
       include: {
         _count: {
           select: { dishes: true },

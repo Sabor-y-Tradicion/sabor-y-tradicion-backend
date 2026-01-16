@@ -27,6 +27,7 @@ export const createDishSchema = z.object({
   allergens: z.array(z.string()).optional().default([]),
   order: z.number().int().min(0).optional().default(0),
   tags: z.array(z.string()).optional().default([]),
+  subtagIds: z.array(z.string()).optional().default([]),
   preparationTime: z
     .number()
     .int('Debe ser un número entero')
@@ -55,6 +56,7 @@ export const updateDishSchema = z.object({
   allergens: z.array(z.string()).optional(),
   order: z.number().int().min(0).optional(),
   tags: z.array(z.string()).optional(),
+  subtagIds: z.array(z.string()).optional(),
   preparationTime: z
     .number()
     .int('Debe ser un número entero')

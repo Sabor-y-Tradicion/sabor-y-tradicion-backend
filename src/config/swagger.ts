@@ -33,7 +33,7 @@ const options: swaggerJsdoc.Options = {
             id: { type: 'string' },
             email: { type: 'string', format: 'email' },
             name: { type: 'string' },
-            role: { type: 'string', enum: ['ADMIN', 'EDITOR'] },
+            role: { type: 'string', enum: ['ADMIN', 'ORDERS_MANAGER'] },
             createdAt: { type: 'string', format: 'date-time' },
           },
         },
@@ -90,7 +90,7 @@ const options: swaggerJsdoc.Options = {
             email: { type: 'string', format: 'email' },
             password: { type: 'string', format: 'password', minLength: 6 },
             name: { type: 'string' },
-            role: { type: 'string', enum: ['ADMIN', 'EDITOR'] },
+            role: { type: 'string', enum: ['ADMIN', 'ORDERS_MANAGER'] },
           },
         },
         CreateCategoryInput: {

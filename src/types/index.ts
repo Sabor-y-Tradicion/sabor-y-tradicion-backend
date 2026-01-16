@@ -22,8 +22,10 @@ export interface PaginatedResponse<T> {
 
 export interface JwtPayload {
   userId: string;
+  id: string; // Alias de userId para compatibilidad
   email: string;
   role: string;
+  tenantId: string | null;
 }
 
 export interface RequestWithUser extends Request {

@@ -12,9 +12,17 @@ import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/auth.routes';
 import categoryRoutes from './routes/category.routes';
 import dishRoutes from './routes/dish.routes';
+import orderRoutes from './routes/order.routes';
+import tenantRoutes from './routes/tenant.routes';
+import logsRoutes from './routes/logs.routes';
+import superAdminRoutes from './routes/superadmin.routes';
+import adminRoutes from './routes/admin.routes';
+import subtagRoutes from './routes/subtag.routes';
+import websiteRoutes from './routes/website.routes';
 
 // Import middlewares
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
+import { tenantResolutionMiddleware } from './middlewares/tenant-resolution.middleware';
 import { logger } from './utils/helpers';
 
 // Load environment variables
@@ -26,12 +34,47 @@ const app: Application = express();
 // Get port from environment variables
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  optionsSuccessStatus: 200,
-};
+// CORS configuration - Permisivo para desarrollo, restrictivo en producción
+const corsOptions = process.env.NODE_ENV === 'development'
+  ? {
+      // ⚠️ SOLO PARA DESARROLLO - Permite todo
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: '*', // Permite cualquier header
+      exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    }
+  : {
+      // PRODUCCIÓN - Configuración restrictiva
+      origin: (origin: string | undefined, callback: any) => {
+        // Permitir requests sin origin (móviles, Postman, etc)
+        if (!origin) return callback(null, true);
+
+        // En producción, verificar dominio base y subdominios
+        const baseDomain = process.env.BASE_DOMAIN || 'james.pe';
+
+        // Permitir dominio principal y www
+        const allowedOrigins = [
+          `https://${baseDomain}`,
+          `https://www.${baseDomain}`,
+          `http://localhost:3000`, // Para testing local
+        ];
+
+        // Regex para permitir cualquier subdominio
+        const subdomainRegex = new RegExp(`^https://[a-z0-9-]+\\.${baseDomain.replace('.', '\\.')}$`);
+
+        if (allowedOrigins.includes(origin) || subdomainRegex.test(origin)) {
+          callback(null, true);
+        } else {
+          console.warn(`❌ CORS blocked origin: ${origin}`);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Domain', 'X-Requested-With', 'Cache-Control', 'Pragma'],
+      optionsSuccessStatus: 200,
+    };
 
 // Rate limiting configuration - Más permisivo en desarrollo
 const limiter = rateLimit({
@@ -93,10 +136,27 @@ app.get('/docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-// API Routes
+// API Routes - Auth y Tenants domain NO requieren tenant resolution
 app.use('/api/auth', authRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/logs', logsRoutes);
+app.use('/api/superadmin', superAdminRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/website', websiteRoutes);
+
+// Rutas públicas de Orders (NO requieren tenant resolution)
+// La ruta /public maneja el tenant internamente via X-Tenant-Domain header
+app.use('/api/orders', orderRoutes);
+
+// Tenant resolution middleware (aplicar a las rutas que lo necesitan)
+app.use('/api/categories', tenantResolutionMiddleware);
+app.use('/api/dishes', tenantResolutionMiddleware);
+app.use('/api/subtags', tenantResolutionMiddleware);
+
+// Routes with tenant resolution applied
 app.use('/api/categories', categoryRoutes);
 app.use('/api/dishes', dishRoutes);
+app.use('/api/subtags', subtagRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

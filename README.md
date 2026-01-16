@@ -1,6 +1,18 @@
-# Sabor y Tradición - Backend API
+# Sabor y Tradición - Backend API (Sistema Multitenant)
 
-Backend API REST para el sistema de gestión de menú del restaurante Sabor y Tradición.
+Backend API REST multitenant para sistema de gestión de menú de restaurantes.
+
+> 🎉 **Actualizado a Sistema Multitenant v2.0** - Enero 2026
+
+## ✨ Características Principales
+
+- 🏢 **Sistema Multitenant** - Múltiples restaurantes en una plataforma
+- 🔐 **3 Roles de Usuario** - SUPERADMIN, ADMIN, ORDERS_MANAGER
+- 📦 **3 Planes** - Free, Premium, Enterprise
+- 🔒 **Aislamiento de Datos** - Cada tenant con sus propios datos
+- 📊 **33+ Endpoints API** - REST API completa
+- 🎨 **Configuración Personalizable** - Settings por tenant
+- 📝 **Auditoría Completa** - Registro de acciones críticas
 
 ## 🚀 Stack Tecnológico
 
@@ -52,11 +64,24 @@ FRONTEND_URL=http://localhost:3000
 npm run prisma:generate
 
 # Ejecutar migraciones
-npm run prisma:migrate
-
-# Poblar la base de datos con datos de prueba
-npm run prisma:seed
+npm run prisma:migrate:deploy
 ```
+
+5. **Instalar Sistema Multitenant**
+
+**Opción A: Instalación Nueva (Vacía)**
+```bash
+npm run install:fresh
+```
+Crea solo el SUPERADMIN (superadmin@tuapp.com / superadmin123)
+
+**Opción B: Migración de Datos Existentes**
+```bash
+npm run migrate:multitenant
+```
+Migra datos de "Sabor y Tradición" y crea SUPERADMIN
+
+> 📚 Ver [INSTALLATION_GUIDE.md](./INSTALLATION_GUIDE.md) para detalles completos
 
 ## 🏃 Ejecutar el proyecto
 
@@ -65,28 +90,117 @@ npm run prisma:seed
 npm run dev
 ```
 
+El servidor estará disponible en `http://localhost:5000`
+
 ### Modo producción
 ```bash
 npm run build
 npm start
 ```
 
-## 📚 Endpoints API
+## 🔐 Credenciales Iniciales
 
-### 🔐 Autenticación
+### Instalación Nueva
+```
+Email: superadmin@tuapp.com
+Password: superadmin123
+```
 
-#### Registrar usuario
+### Migración Sabor y Tradición
+```
+Email: superadmin@saborytradicion.pe
+Password: SuperAdmin2026!
+```
+
+⚠️ **Cambiar la contraseña después del primer login**
+
+## 📚 Documentación Completa
+
+### Guías Principales
+- **[DOCS_INDEX.md](./DOCS_INDEX.md)** - Índice de toda la documentación ⭐
+- **[INSTALLATION_GUIDE.md](./INSTALLATION_GUIDE.md)** - Guía de instalación detallada
+- **[MULTITENANT.md](./MULTITENANT.md)** - Sistema multitenant completo
+- **[implementar.md](./implementar.md)** - Flujo de usuarios visual
+
+### Referencia Técnica
+- **[IMPLEMENTATION_COMPLETE.md](./IMPLEMENTATION_COMPLETE.md)** - Detalles de implementación
+- **[MIGRATION_STATUS.md](./MIGRATION_STATUS.md)** - Estado de migraciones
+- **[CHECKLIST_FINAL.md](./CHECKLIST_FINAL.md)** - Estado del proyecto
+
+### API Reference
+- **Swagger UI:** `http://localhost:5000/docs`
+- **JSON Spec:** `http://localhost:5000/docs.json`
+
+## 📡 Endpoints API (33 total)
+
+### 🔐 Autenticación (5)
+
+#### Login
 ```http
-POST /api/auth/register
+POST /api/auth/login
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "Usuario",
-  "role": "ADMIN" // o "EDITOR"
+  "email": "superadmin@tuapp.com",
+  "password": "superadmin123"
 }
 ```
+
+#### Obtener Usuario Actual
+```http
+GET /api/auth/me
+Authorization: Bearer {token}
+```
+
+### 🏢 Tenants (11 endpoints)
+
+#### Obtener Tenant por Dominio (Público)
+```http
+GET /api/tenants/domain/sabor-y-tradicion.local
+```
+
+#### Crear Tenant (SUPERADMIN)
+```http
+POST /api/tenants
+Authorization: Bearer {superadmin_token}
+Content-Type: application/json
+
+{
+  "name": "Nuevo Restaurante",
+  "slug": "nuevo-restaurante",
+  "email": "contacto@nuevo.com",
+  "plan": "premium",
+  "adminName": "Admin",
+  "adminEmail": "admin@nuevo.com",
+  "adminPassword": "Admin123!"
+}
+```
+
+### 📋 Categorías, Platos y Órdenes
+
+**Nota:** Todos los endpoints requieren header `X-Tenant-Domain`
+
+```http
+GET /api/categories
+X-Tenant-Domain: sabor-y-tradicion.local
+Authorization: Bearer {token}
+```
+
+> Ver [MULTITENANT.md](./MULTITENANT.md) para la lista completa de endpoints
+
+## 🔐 Autenticación
+
+El sistema usa JWT con información del tenant:
+
+```javascript
+// Headers requeridos
+{
+  "Authorization": "Bearer {token}",
+  "X-Tenant-Domain": "sabor-y-tradicion.local"
+}
+```
+
+## 📚 Endpoints API Anteriores (Actualizados)
 
 #### Verificar Token
 ```http

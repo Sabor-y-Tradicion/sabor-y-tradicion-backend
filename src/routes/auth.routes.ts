@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authController from '../controllers/auth.controller';
+import { authMiddleware } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -111,6 +112,46 @@ router.post('/login', authController.login);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/verify', authController.verify);
+
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Obtener información del usuario autenticado
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Información del usuario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: No autenticado
+ */
+router.get('/me', authMiddleware, authController.me);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Cerrar sesión
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada exitosamente
+ */
+router.post('/logout', authMiddleware, authController.logout);
 
 export default router;
 

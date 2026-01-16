@@ -31,6 +31,7 @@ export class AuthService {
         email: true,
         name: true,
         role: true,
+        tenantId: true,
         createdAt: true,
       },
     });
@@ -38,8 +39,10 @@ export class AuthService {
     // Generate token
     const token = this.generateToken({
       userId: user.id,
+      id: user.id, // Alias para compatibilidad
       email: user.email,
       role: user.role,
+      tenantId: user.tenantId,
     });
 
     return { user, token };
@@ -65,8 +68,10 @@ export class AuthService {
     // Generate token
     const token = this.generateToken({
       userId: user.id,
+      id: user.id, // Alias para compatibilidad
       email: user.email,
       role: user.role,
+      tenantId: user.tenantId,
     });
 
     return {
@@ -75,6 +80,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        tenantId: user.tenantId,
       },
       token,
     };

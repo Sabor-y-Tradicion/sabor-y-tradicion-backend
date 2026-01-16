@@ -39,30 +39,30 @@ export const errorHandler = (
 
   // Prisma errors
   if (err.code === 'P2002') {
-    return errorResponse(res, 'A record with this value already exists', 409);
+    return res.status(409).json(errorResponse('A record with this value already exists'));
   }
 
   if (err.code === 'P2025') {
-    return errorResponse(res, 'Record not found', 404);
+    return res.status(404).json(errorResponse('Record not found'));
   }
 
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    return errorResponse(res, 'Invalid token', 401);
+    return res.status(401).json(errorResponse('Invalid token'));
   }
 
   if (err.name === 'TokenExpiredError') {
-    return errorResponse(res, 'Token expired', 401);
+    return res.status(401).json(errorResponse('Token expired'));
   }
 
   // Default error
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal server error';
 
-  return errorResponse(res, message, statusCode);
+  return res.status(statusCode).json(errorResponse(message));
 };
 
 export const notFoundHandler = (req: Request, res: Response) => {
-  return errorResponse(res, `Route ${req.originalUrl} not found`, 404);
+  return res.status(404).json(errorResponse(`Route ${req.originalUrl} not found`));
 };
 

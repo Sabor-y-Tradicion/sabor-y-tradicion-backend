@@ -6,8 +6,9 @@ import { successResponse, errorResponse } from '../utils/response';
 export class CategoryController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const categories = await categoryService.getAll();
-      return successResponse(res, categories);
+      const tenantId = req.tenant?.id;
+      const categories = await categoryService.getAll(tenantId);
+      return res.json(successResponse(categories));
     } catch (error) {
       next(error);
     }
@@ -16,11 +17,12 @@ export class CategoryController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const category = await categoryService.getById(id);
-      return successResponse(res, category);
+      const tenantId = req.tenant?.id;
+      const category = await categoryService.getById(id, tenantId);
+      return res.json(successResponse(category));
     } catch (error: any) {
       if (error.message === 'Category not found') {
-        return errorResponse(res, error.message, 404);
+        return res.status(404).json(errorResponse(error.message));
       }
       next(error);
     }
@@ -29,11 +31,17 @@ export class CategoryController {
   async getBySlug(req: Request, res: Response, next: NextFunction) {
     try {
       const { slug } = req.params;
-      const category = await categoryService.getBySlug(slug);
-      return successResponse(res, category);
+      const tenantId = req.tenant?.id;
+
+      if (!tenantId) {
+        return res.status(400).json(errorResponse('Tenant ID is required'));
+      }
+
+      const category = await categoryService.getBySlug(slug, tenantId);
+      return res.json(successResponse(category));
     } catch (error: any) {
       if (error.message === 'Category not found') {
-        return errorResponse(res, error.message, 404);
+        return res.status(404).json(errorResponse(error.message));
       }
       next(error);
     }
@@ -41,12 +49,18 @@ export class CategoryController {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
+      const tenantId = req.tenant?.id;
+
+      if (!tenantId) {
+        return res.status(400).json(errorResponse('Tenant ID is required'));
+      }
+
       const validatedData = createCategorySchema.parse(req.body);
-      const category = await categoryService.create(validatedData);
-      return successResponse(res, category, 'Category created successfully', 201);
+      const category = await categoryService.create(validatedData, tenantId);
+      return res.status(201).json(successResponse(category, 'Category created successfully'));
     } catch (error: any) {
       if (error.message === 'Category with this name already exists') {
-        return errorResponse(res, error.message, 409);
+        return res.status(409).json(errorResponse(error.message));
       }
       next(error);
     }
@@ -55,12 +69,13 @@ export class CategoryController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const tenantId = req.tenant?.id;
       const validatedData = updateCategorySchema.parse(req.body);
-      const category = await categoryService.update(id, validatedData);
-      return successResponse(res, category, 'Category updated successfully');
+      const category = await categoryService.update(id, validatedData, tenantId);
+      return res.json(successResponse(category, 'Category updated successfully'));
     } catch (error: any) {
       if (error.message === 'Category not found') {
-        return errorResponse(res, error.message, 404);
+        return res.status(404).json(errorResponse(error.message));
       }
       next(error);
     }
@@ -69,14 +84,15 @@ export class CategoryController {
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const result = await categoryService.delete(id);
-      return successResponse(res, result, 'Category deleted successfully');
+      const tenantId = req.tenant?.id;
+      const result = await categoryService.delete(id, tenantId);
+      return res.json(successResponse(result, 'Category deleted successfully'));
     } catch (error: any) {
       if (error.message === 'Category not found') {
-        return errorResponse(res, error.message, 404);
+        return res.status(404).json(errorResponse(error.message));
       }
       if (error.message === 'Cannot delete category with associated dishes') {
-        return errorResponse(res, error.message, 400);
+        return res.status(400).json(errorResponse(error.message));
       }
       next(error);
     }
@@ -87,11 +103,11 @@ export class CategoryController {
       const { categoryIds } = req.body;
 
       if (!Array.isArray(categoryIds)) {
-        return errorResponse(res, 'categoryIds must be an array', 400);
+        return res.status(400).json(errorResponse('categoryIds must be an array'));
       }
 
       const result = await categoryService.reorder(categoryIds);
-      return successResponse(res, result, 'Categories reordered successfully');
+      return res.json(successResponse(result, 'Categories reordered successfully'));
     } catch (error) {
       next(error);
     }

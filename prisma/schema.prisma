@@ -7,6 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  domain       String       @unique
+  customDomain String?      @unique
+  email        String
+  plan         TenantPlan   @default(free)
+  status       TenantStatus @default(active)
+  settings     Json         @default("{}")
+  webConfig    Json?        @default("{}")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  categories   Category[]
+  dishes       Dish[]
+  logs         Log[]
+  orders       Order[]
+  subtags      Subtag[]
+  users        User[]
+
+  @@index([domain])
+  @@index([customDomain])
+  @@index([status])
+  @@map("tenants")
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -15,50 +41,87 @@ model User {
   role      Role     @default(ADMIN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tenantId  String?
+  logs      Log[]    @relation("UserLogs")
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@index([email])
   @@map("users")
 }
 
 model Category {
   id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
+  name        String
+  slug        String
   description String?
   icon        String?
   order       Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   dishes      Dish[]
 
+  @@unique([slug, tenantId])
   @@index([slug])
   @@index([order])
+  @@index([tenantId])
   @@map("categories")
 }
 
 model Dish {
   id              String   @id @default(cuid())
   name            String
-  slug            String   @unique
+  slug            String
   description     String
   price           Decimal  @db.Decimal(10, 2)
   categoryId      String
-  image           String?
   isActive        Boolean  @default(true)
   isFeatured      Boolean  @default(false)
   allergens       String[] @default([])
-  tags            String[] @default([])
-  preparationTime Int?
-  servings        Int?
   order           Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  tags            String[] @default([])
+  image           String?
+  preparationTime Int?
+  servings        Int?
+  tenantId        String
+  subtagIds       String[] @default([])
   category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@unique([slug, tenantId])
   @@index([slug])
   @@index([categoryId])
   @@index([isActive])
+  @@index([tenantId])
   @@map("dishes")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  items       Json
+  customer    Json
+  delivery    Json
+  payment     Json
+  subtotal    Decimal     @db.Decimal(10, 2)
+  total       Decimal     @db.Decimal(10, 2)
+  status      OrderStatus @default(PREPARING)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  tenantId    String
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+  @@index([tenantId])
+  @@map("orders")
 }
 
 model Settings {
@@ -82,7 +145,87 @@ model PageContent {
   @@map("page_content")
 }
 
+model Log {
+  id         String    @id @default(cuid())
+  level      LogLevel  @default(info)
+  action     LogAction
+  message    String
+  details    Json?
+  userId     String?
+  userEmail  String?
+  tenantId   String?
+  tenantName String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  tenant     Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User?     @relation("UserLogs", fields: [userId], references: [id])
+
+  @@index([level])
+  @@index([action])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("logs")
+}
+
+model Subtag {
+  id        String   @id @default(cuid())
+  name      String
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([name, tenantId])
+  @@index([tenantId])
+  @@map("subtags")
+}
+
 enum Role {
   ADMIN
-  EDITOR
+  ORDERS_MANAGER
+  SUPERADMIN
+}
+
+enum OrderStatus {
+  PREPARING
+  DELIVERED
+}
+
+enum TenantPlan {
+  free
+  premium
+  enterprise
+}
+
+enum TenantStatus {
+  active
+  suspended
+  inactive
+}
+
+enum LogLevel {
+  info
+  warning
+  error
+  critical
+}
+
+enum LogAction {
+  tenant_created
+  tenant_updated
+  tenant_suspended
+  tenant_activated
+  tenant_deleted
+  user_created
+  user_updated
+  user_deleted
+  login_success
+  login_failed
+  settings_updated
+  order_created
+  order_updated
+  category_created
+  dish_created
 }
